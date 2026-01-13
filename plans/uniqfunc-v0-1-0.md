@@ -20,11 +20,12 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 - JSON output emits a single object with stable ordering and all required fields.
 - Extensive pytest coverage matching the SPEC acceptance cases.
 - Favor function-level doctests as primary executable examples; rely on unit tests for multi-function behavior, determinism, and git/FS interactions that doctests cannot isolate cleanly.
+- Release flow includes building and uploading the package to PyPI so `uvx uniqfunc` works.
 
 ## Scope
 
-- In: core scanning, similarity scoring, CLI, formatting, error handling, tests, packaging, and README updates per SPEC.
-- Out: non-Python language support, config files, runtime dependencies, and optional integrations.
+- In: core scanning, similarity scoring, CLI, formatting, error handling, tests, packaging, README updates, and PyPI release steps per SPEC.
+- Out: non-Python language support, config files, runtime dependencies, and optional integrations beyond PyPI upload.
 - Assumptions: Python version is 3.12+ per SPEC.
 
 ## Files and entry points
@@ -94,6 +95,7 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
   [ ] 4. Implement similarity scoring with per-strategy modules and a combined ranker, using doctests and unit tests.
   [ ] 5. Wire duplicate detection, output formatting, and CLI entry points with tests.
   [ ] 6. Update packaging metadata, README, Makefile, and regenerate CONTEXT.md.
+  [ ] 7. Build and upload the package to PyPI for `uvx uniqfunc` usage.
 
 ## Task 1: Core models and git-aware file selection
 
@@ -203,3 +205,25 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
     Expected: All tests pass with deterministic output ordering.
     Rationale: Packaging and docs changes are easy to ship without noticing behavioral regressions. Running the full unit suite ensures the CLI contract and output formats still match SPEC before release.
   - Doc tests: `src/uniqfunc/cli.py` doctests pass and remain consistent with README examples.
+
+## Task 7: PyPI release
+
+  Goal: Build and upload the package so `uvx uniqfunc` works for end users.
+
+- [ ] 7.1 Verify release metadata (version, readme, license, entry points) and ensure the `pyproject.toml` matches SPEC.
+- [ ] 7.2 Build sdist and wheel (e.g., `uv build`) and run a package check (e.g., `uvx twine check dist/*`).
+- [ ] 7.3 Upload to PyPI (e.g., `uvx twine upload dist/*`) using configured credentials.
+- [ ] 7.4 Validate `uvx uniqfunc --version` resolves and runs from PyPI.
+
+  Acceptance criteria:
+  - CLI: `uv run --env-file .env -m uniqfunc.cli --version`
+    Expected: Prints `0.1.0` and exits 0.
+  - Unit tests: `uv run pytest`
+    Expected: All tests pass before building and uploading.
+    Rationale: The release pipeline must only run on a green test suite to avoid shipping a broken CLI to PyPI.
+  - Release: `uv build`
+    Expected: `dist/` contains a wheel and sdist.
+  - Release: `uvx twine check dist/*`
+    Expected: Metadata checks pass with no errors or warnings.
+  - Release: `uvx twine upload dist/*`
+    Expected: Upload succeeds and `uvx uniqfunc --version` works.

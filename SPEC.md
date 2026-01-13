@@ -27,7 +27,7 @@ Recommended agent loop:
 
 ## Supported Python versions
 
-- **Python >= 3.13 only**
+- **Python >= 3.12 only**
 - Use modern syntax freely (`|` unions, `list[str]`, etc.)
 
 ---
@@ -101,9 +101,14 @@ uniqfunc also emits a list of **candidate similar functions** intended for a dow
 
 The tool does **not** decide semantic equivalence; it only surfaces candidates.
 
-#### Similarity strategy (Option A)
+#### Similarity strategy
 
 Candidate retrieval is based on two deterministic signals:
+
+Before diving in, two terms used below:
+
+- **Shingles**: contiguous n-grams of the canonical token stream (e.g., 5 tokens at a time), used to capture local structure without full AST matching.
+- **Jaccard similarity**: intersection size divided by union size for two shingle sets; higher values mean more shared structure.
 
 1) **Name + signature similarity**
    - snake_case token overlap
@@ -111,12 +116,59 @@ Candidate retrieval is based on two deterministic signals:
    - parameter count + parameter-name overlap
    - return annotation string (if present)
 
+   Example:
+
+   - Target: `def epoch_to_aware_datetime(epoch_seconds: int) -> datetime`
+   - Candidate: `def epoch_to_datetime(epoch: int) -> datetime`
+
+   Name tokens:
+   - `epoch_to_aware_datetime` -> `{"epoch", "to", "aware", "datetime"}`
+   - `epoch_to_datetime` -> `{"epoch", "to", "datetime"}`
+   - token overlap = 3/4 (Jaccard 0.75)
+
+   Signature:
+   - parameter count = 1 vs 1 (score 1.0)
+   - parameter name overlap = `{"epoch_seconds"}` vs `{"epoch"}` (low overlap)
+   - return annotation = `datetime` matches (score 1.0)
+
+   The final name+signature score should reflect strong name overlap and identical return type even if parameter names are not identical.
+
 2) **AST fingerprint similarity**
    - compute a lightweight canonical token stream from the function body
    - normalize local identifiers to placeholders
    - bucket constants (NUM/STR/NONE/BOOL)
    - retain operators and called function names
-   - compute similarity via shingled n-gram Jaccard (e.g., 5-grams) or token multiset overlap
+   - compute similarity via shingled n-gram Jaccard (default 5-grams) or token multiset overlap
+   - fallback: if the canonical token stream is shorter than 5 tokens, skip shingling and use token multiset overlap to avoid unstable scores
+
+   Example:
+
+   - Target:
+
+     ```python
+     def clamp(x: int, lo: int, hi: int) -> int:
+         if x < lo:
+             return lo
+         if x > hi:
+             return hi
+         return x
+     ```
+
+   - Candidate:
+
+     ```python
+     def clamp_value(value: int, minimum: int, maximum: int) -> int:
+         if value < minimum:
+             return minimum
+         if value > maximum:
+             return maximum
+         return value
+     ```
+
+   Canonical token stream sketch (illustrative):
+   - `IF`, `VAR`, `<`, `VAR`, `RETURN`, `VAR`, `IF`, `VAR`, `>`, `VAR`, `RETURN`, `VAR`, `RETURN`, `VAR`
+
+   After shingling into 5-grams, the Jaccard similarity should be high because structure and operators are identical even though identifier names differ.
 
 Final candidate score may be a weighted combination of the two.
 
@@ -126,7 +178,7 @@ To keep v0.1.0 minimal:
 
 - treat **every function** as eligible for reuse suggestions (full scan)
 - filter out self-matches
-- return top 5 candidates per target above a threshold (e.g., `>= 0.70`)
+- return top 5 candidates per target above a threshold (default `>= 0.70`, configurable via CLI)
 
 ---
 
@@ -143,6 +195,7 @@ uniqfunc [PATH]
 ### Flags
 
 - `--format {text,json}` (default: `text`)
+- `--similarity-threshold FLOAT` (default: `0.70`)
 - `--version`
 - `-h/--help`
 
@@ -266,7 +319,7 @@ Routing:
 
 ## Repository layout
 
-```
+```bash
 .
 ├── LICENSE
 ├── README.md
@@ -397,9 +450,10 @@ README MUST highlight:
 
 ### Usage examples
 
+Keep this section minimal:
+
 ```bash
 uvx uniqfunc
-uvx uniqfunc --format json
 ```
 
 ### Output examples
@@ -413,6 +467,10 @@ uvx uniqfunc --format json
 - Requires git repo
 - Uses git to pick files
 - No config by design
+
+### README length guidance
+
+- Keep the README as short as possible while still satisfying the required sections above.
 
 ---
 

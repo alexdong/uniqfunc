@@ -44,14 +44,14 @@ These opinionated principles contradict much of the common wisdom. Take the time
 - When it comes to refactoring, prefer breaking changes over complex migration paths. Don't be afraid to delete old code. If you need to preserve history, we can always grep through git history.
 - When it comes to dependencies, prefer the latest stable versions. Avoid using deprecated libraries or features. If a library is no longer maintained, find an alternative or consider writing the functionality ourselves.
 - When it comes to type data structures, avoid deprecated constructs. Avoid `from __future__ import annotations`.
-- Avoid `Optional` and `Union` types unless absolutely necessary. Avoid `TypedDict` unless you need to interoperate with untyped data (e.g., JSON).
+- Treat `| None`, `Optional`, and `Union` as a design taste: use them only when the model genuinely requires it and after considering alternative structures. Avoid `TypedDict` unless you need to interoperate with untyped data (e.g., JSON).
 - Avoid exceptions for control flow, unless absolutely necessary.
 
 ## Workflow
 
 1. **Explore**: Spend time understanding the problem space, explore the codebase, and note down information that is relevant to the task at hand. Ask questions to clarify requirements and challenge assumptions.
 2. **Plan**:
-   - Start from `plans/TEMPLATE.md` and use `plans/completed/benchmark.md` as the one-shot reference for structure and detail.
+   - Start from `plans/TEMPLATE.md` for structure and detail.
    - Define data structures, function signatures, files/modules, and overall architecture.
    - Split work into tasks of similar size; each task is its own section with a clear goal.
    - Use `[ ]` for each step, and number both tasks and steps for easy reference.

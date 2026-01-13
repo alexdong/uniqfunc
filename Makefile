@@ -1,4 +1,4 @@
-.PHONY: dev test test-coverage web serve
+.PHONY: dev test 
 
 dev:
 	uv run ruff check . --fix --unsafe-fixes
@@ -8,11 +8,3 @@ dev:
 test:
 	uv run pytest --lf
 
-test-coverage:
-	uv run pytest --cov=. --cov-report=html --cov-report=term --duration=5 
-
-web:
-	uv run python -m python_template.web
-
-serve:
-	./tools/run_with_tunnel.sh

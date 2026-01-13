@@ -46373,7 +46373,7 @@ Now let's see how easy Modal makes it to deploy all of this.
 
 #### Set up Modal
 
-The first thing we do is define the Modal app, by specifying the base image to use (Debian with Python 3.13), all the Python packages it needs, and all of the secrets defined in the Modal interface that need to be made available during runtime.
+The first thing we do is define the Modal app, by specifying the base image to use (Debian with Python 3.12), all the Python packages it needs, and all of the secrets defined in the Modal interface that need to be made available during runtime.
 
 [slack_lead_qualifier/modal.py (L4-L21)](https://github.com/pydantic/pydantic-ai/blob/main/examples/pydantic_ai_examples/slack_lead_qualifier/modal.py#L4-L21)
 
@@ -46382,7 +46382,7 @@ The first thing we do is define the Modal app, by specifying the base image to u
 
 import modal
 
-image = modal.Image.debian_slim(python_version='3.13').pip_install(
+image = modal.Image.debian_slim(python_version='3.12').pip_install(
     'pydantic',
     'pydantic_ai_slim[openai,duckduckgo]',
     'logfire[httpx,fastapi]',

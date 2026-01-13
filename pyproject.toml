@@ -2,21 +2,8 @@
 name = "quinn"
 version = "0.1.0"
 description = "AI-powered email rubber duck for guided problem-solving"
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
-    "pydantic",
-    "pydantic-ai>=0.0.14",
-    "python-fasthtml>=0.7.0",
-    "click>=8.0.0",
-    "rich>=13.0.0",
-    "prompt-toolkit>=3.0.0",
-    "httpx>=0.25.0",
-    "jinja2>=3.1.0",
-    "toml>=0.10.0",
-    "loguru>=0.7.0",
-    "plotly>=5.0.0",
-    "streamlit>=1.0.0",
-    "pytest-asyncio>=1.0.0",
 ]
 
 [project.scripts]
@@ -108,4 +95,3 @@ exclude_lines = [
     "raise AssertionError",
     "raise NotImplementedError",
 ]
-

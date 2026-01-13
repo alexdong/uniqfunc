@@ -1,7 +1,6 @@
 ---
 name: <plan-slug>
 description: <short, specific description of the work>
-One-shot reference: `plans/completed/benchmark.md`
 ---
 
 # Plan

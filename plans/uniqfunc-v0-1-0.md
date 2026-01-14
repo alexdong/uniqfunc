@@ -93,7 +93,7 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
   [x] 2. Implement AST parsing in `parser.py` with doctests and unit tests.
   [x] 3. Implement fingerprinting in `fingerprint.py` with doctests and unit tests.
   [x] 4. Implement similarity scoring with per-strategy modules and a combined ranker, using doctests and unit tests.
-  [ ] 5. Wire duplicate detection, output formatting, and CLI entry points with tests.
+  [x] 5. Wire duplicate detection, output formatting, and CLI entry points with tests.
   [ ] 6. Update packaging metadata, README, Makefile, and regenerate CONTEXT.md.
   [ ] 7. Build and upload the package to PyPI for `uvx uniqfunc` usage.
 
@@ -175,11 +175,11 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 
   Goal: Produce deterministic diagnostics and exit codes for both text and JSON modes.
 
-- [ ] 5.1 Implement duplicate detection across all functions with deterministic sorting by `(path, line, name)`.
-- [ ] 5.2 Implement `formatters.py` for text output (UQF100/UQF200/UQF201) and JSON output schema.
-- [ ] 5.3 Implement `cli.py` with argparse, `--format` and `--similarity-threshold` flags, exit code logic, and routing of stdout/stderr.
-- [ ] 5.4 Add `__main__` blocks to each module with DEBUG logging and example usages in docstrings.
-- [ ] 5.5 Write `tests/test_cli_text_output.py` and `tests/test_cli_json_output.py` to assert stable formatting and ordering.
+- [x] 5.1 Implement duplicate detection across all functions with deterministic sorting by `(path, line, name)`.
+- [x] 5.2 Implement `formatters.py` for text output (UQF100/UQF200/UQF201) and JSON output schema.
+- [x] 5.3 Implement `cli.py` with argparse, `--format` and `--similarity-threshold` flags, exit code logic, and routing of stdout/stderr.
+- [x] 5.4 Add `__main__` blocks to each module with DEBUG logging and example usages in docstrings.
+- [x] 5.5 Write `tests/test_cli_text_output.py` and `tests/test_cli_json_output.py` to assert stable formatting and ordering.
 
   Acceptance criteria:
   - CLI: `uv run --env-file .env -m uniqfunc.cli --format text`

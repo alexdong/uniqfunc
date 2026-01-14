@@ -6,7 +6,6 @@ Usage:
 """
 
 import argparse
-import json
 import logging
 import sys
 from collections.abc import Sequence
@@ -14,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from uniqfunc import __version__
+from uniqfunc.formatters import format_error_lines, format_json, format_text
 from uniqfunc.git_files import (
     FileListFailure,
     RepoRootFailure,
@@ -21,20 +21,14 @@ from uniqfunc.git_files import (
     resolve_repo_root,
 )
 from uniqfunc.logging_config import configure_logging
-from uniqfunc.model import (
-    FuncRef,
-    NamingConflict,
-    ReuseCandidate,
-    ReuseSuggestion,
-    ScanError,
-    ScanResult,
-)
+from uniqfunc.model import FuncRef, NamingConflict, ScanError, ScanResult
 from uniqfunc.parser import ParseFailure, parse_function_defs
 from uniqfunc.similarity import reuse_suggestions
 
 logger = logging.getLogger(__name__)
 
 READ_ERROR_CODE = "UQF000"
+FATAL_ERROR_CODES = {"UQF002", "UQF003"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +94,39 @@ def _scan_files(repo_root: Path, files: Sequence[Path]) -> ScanSlice:
     return ScanSlice(functions=functions, errors=errors)
 
 
+def find_naming_conflicts(functions: Sequence[FuncRef]) -> list[NamingConflict]:
+    ordered = sorted(
+        functions,
+        key=lambda func: (func.path.as_posix(), func.line, func.name),
+    )
+    seen: dict[str, FuncRef] = {}
+    conflicts: list[NamingConflict] = []
+    for func in ordered:
+        if func.name in seen:
+            conflicts.append(
+                NamingConflict(
+                    name=func.name,
+                    occurrence=func,
+                    first_seen=seen[func.name],
+                ),
+            )
+            continue
+        seen[func.name] = func
+    return conflicts
+
+
+def is_fatal_error(error: ScanError) -> bool:
+    """Return True when an error should terminate the scan.
+
+    Examples:
+        >>> is_fatal_error(ScanError("UQF002", Path("repo"), 1, 1, "git error"))
+        True
+        >>> is_fatal_error(ScanError("UQF000", Path("file.py"), 1, 1, "read error"))
+        False
+    """
+    return error.code in FATAL_ERROR_CODES
+
+
 def scan_repository(cwd: Path, similarity_threshold: float) -> ScanResult | ScanError:
     root_result = resolve_repo_root(cwd)
     if isinstance(root_result, RepoRootFailure):
@@ -108,84 +135,15 @@ def scan_repository(cwd: Path, similarity_threshold: float) -> ScanResult | Scan
     if isinstance(files_result, FileListFailure):
         return files_result.error
     scan_slice = _scan_files(root_result.repo_root, files_result.files)
+    conflicts = find_naming_conflicts(scan_slice.functions)
     suggestions = reuse_suggestions(scan_slice.functions, similarity_threshold)
     return ScanResult(
         repo_root=root_result.repo_root,
         functions=scan_slice.functions,
         errors=scan_slice.errors,
+        conflicts=conflicts,
         suggestions=suggestions,
     )
-
-
-def _path_to_string(path: Path) -> str:
-    return path.as_posix()
-
-
-def _func_ref_location(func_ref: FuncRef) -> dict[str, object]:
-    return {
-        "path": _path_to_string(func_ref.path),
-        "line": func_ref.line,
-        "col": func_ref.col,
-    }
-
-
-def _naming_conflict_json(conflict: NamingConflict) -> dict[str, object]:
-    return {
-        "code": "UQF100",
-        "name": conflict.name,
-        "occurrence": _func_ref_location(conflict.occurrence),
-        "first_seen": _func_ref_location(conflict.first_seen),
-    }
-
-
-def _reuse_candidate_json(candidate: ReuseCandidate) -> dict[str, object]:
-    return {
-        "path": _path_to_string(candidate.path),
-        "line": candidate.line,
-        "col": candidate.col,
-        "name": candidate.name,
-        "score": candidate.score,
-        "signals": candidate.signals,
-    }
-
-
-def _reuse_suggestion_json(suggestion: ReuseSuggestion) -> dict[str, object]:
-    return {
-        "target": {
-            "path": _path_to_string(suggestion.target.path),
-            "line": suggestion.target.line,
-            "col": suggestion.target.col,
-            "name": suggestion.target.name,
-        },
-        "candidates": [
-            _reuse_candidate_json(candidate) for candidate in suggestion.candidates
-        ],
-    }
-
-
-def _scan_error_json(error: ScanError) -> dict[str, object]:
-    return {
-        "code": error.code,
-        "path": _path_to_string(error.path),
-        "line": error.line,
-        "col": error.col,
-        "message": error.message,
-    }
-
-
-def format_json(scan_result: ScanResult) -> str:
-    payload = {
-        "version": __version__,
-        "repo_root": _path_to_string(scan_result.repo_root.resolve()),
-        "naming_conflicts": [
-            _naming_conflict_json(conflict) for conflict in scan_result.conflicts
-        ],
-        "reuse_suggestions": [
-            _reuse_suggestion_json(suggestion) for suggestion in scan_result.suggestions
-        ],
-        "errors": [_scan_error_json(error) for error in scan_result.errors],
-    }
-    return json.dumps(payload, indent=2)
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -216,6 +174,28 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _emit_text(scan_result: ScanResult) -> None:
+    output = format_text(scan_result)
+    if output.stdout:
+        print(output.stdout)
+    if output.stderr:
+        print(output.stderr, file=sys.stderr)
+
+
+def _emit_json(scan_result: ScanResult) -> None:
+    print(format_json(scan_result))
+    if scan_result.errors:
+        for line in format_error_lines(scan_result.errors):
+            print(line, file=sys.stderr)
+
+
+def _emit_output(scan_result: ScanResult, output_format: str) -> None:
+    if output_format == "json":
+        _emit_json(scan_result)
+        return
+    _emit_text(scan_result)
+
+
 def main(argv: Sequence[str]) -> int:
     """Run the uniqfunc CLI.
 
@@ -233,12 +213,10 @@ def main(argv: Sequence[str]) -> int:
     scan_outcome = scan_repository(cwd, args.similarity_threshold)
     if isinstance(scan_outcome, ScanError):
         result = ScanResult(repo_root=cwd, errors=[scan_outcome])
-        output = format_json(result)
-        print(output)
-        return 2
-    output = format_json(scan_outcome)
-    print(output)
-    return 0
+        _emit_output(result, args.format)
+        return 2 if is_fatal_error(scan_outcome) else 0
+    _emit_output(scan_outcome, args.format)
+    return 1 if scan_outcome.conflicts else 0
 
 
 if __name__ == "__main__":

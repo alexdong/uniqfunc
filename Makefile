@@ -30,6 +30,7 @@ release:
 		exit 1; \
 	fi; \
 	uv build; \
-	uv publish dist/*; \
+	uvx twine check dist/uniqfunc-"$$VERSION"*; \
+	uvx twine upload dist/uniqfunc-"$$VERSION"*; \
 	git tag -a "v$$VERSION" -m "v$$VERSION"; \
 	git push origin main --tags

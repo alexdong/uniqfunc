@@ -196,7 +196,7 @@ uniqfunc [PATH]
 
 - `--format {text,json}` (default: `text`)
 - `--similarity-threshold FLOAT` (default: `0.70`)
-- `--exclude-name REGEX` (repeatable; exclude matching function names)
+- `--exclude-name REGEX` (repeatable; exclude matching function names; defaults to `^main$`, `^cli$`)
 - `--version`
 - `-h/--help`
 
@@ -225,7 +225,7 @@ uniqfunc <version> repo_root=/abs/path
 files=<N> functions=<N> excluded_functions=<N> duplicate_names=<N> duplicate_occurrences=<N> reuse_targets=<N> reuse_candidates=<N> errors=<N>
 ```
 
-If name exclusions are in use, an extra line is printed:
+An extra line lists the active exclude patterns (including defaults):
 
 ```
 exclude_name_patterns=<comma-separated regex patterns>

@@ -11,7 +11,7 @@ from collections.abc import Sequence
 
 __all__ = ["__version__"]
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 
 
 def build_arg_parser() -> argparse.ArgumentParser:

@@ -67,6 +67,7 @@ def test_text_output_includes_summary_header(
     assert stats["reuse_targets"] == "0"
     assert stats["reuse_candidates"] == "0"
     assert stats["errors"] == "0"
+    assert lines[2] == "exclude_name_patterns=^main$,^cli$"
 
 
 def test_text_output_reports_conflicts(
@@ -135,17 +136,17 @@ def test_text_output_reports_suggestions(
             assert "target_loc=" in line
 
 
-def test_text_output_excludes_name_patterns(
+def test_text_output_excludes_default_names(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     repo_path = tmp_path / "repo"
     _init_repo(repo_path)
     (repo_path / "a.py").write_text("def main():\n    return 1\n", encoding="utf-8")
-    (repo_path / "b.py").write_text("def main():\n    return 2\n", encoding="utf-8")
+    (repo_path / "b.py").write_text("def cli():\n    return 2\n", encoding="utf-8")
     _run_git(repo_path, ["add", "a.py", "b.py"])
-    _run_git(repo_path, ["commit", "-m", "Add duplicate mains"])
+    _run_git(repo_path, ["commit", "-m", "Add default excluded names"])
 
-    exit_code = main(["--format", "text", "--exclude-name", "^main$", str(repo_path)])
+    exit_code = main(["--format", "text", str(repo_path)])
     assert exit_code == EXIT_OK
     stdout = capsys.readouterr().out
     assert "UQF100" not in stdout
@@ -153,4 +154,27 @@ def test_text_output_excludes_name_patterns(
     stats = _parse_summary_stats(lines[1])
     assert stats["functions"] == "0"
     assert stats["excluded_functions"] == "2"
-    assert lines[2] == "exclude_name_patterns=^main$"
+    assert lines[2] == "exclude_name_patterns=^main$,^cli$"
+
+
+def test_text_output_excludes_name_patterns(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    repo_path = tmp_path / "repo"
+    _init_repo(repo_path)
+    (repo_path / "a.py").write_text("def skip_me():\n    return 1\n", encoding="utf-8")
+    (repo_path / "b.py").write_text("def skip_me():\n    return 2\n", encoding="utf-8")
+    _run_git(repo_path, ["add", "a.py", "b.py"])
+    _run_git(repo_path, ["commit", "-m", "Add custom excluded names"])
+
+    exit_code = main(
+        ["--format", "text", "--exclude-name", "^skip_me$", str(repo_path)]
+    )
+    assert exit_code == EXIT_OK
+    stdout = capsys.readouterr().out
+    assert "UQF100" not in stdout
+    lines = stdout.splitlines()
+    stats = _parse_summary_stats(lines[1])
+    assert stats["functions"] == "0"
+    assert stats["excluded_functions"] == "2"
+    assert lines[2] == "exclude_name_patterns=^main$,^cli$,^skip_me$"

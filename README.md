@@ -19,7 +19,7 @@ Text output is VS Code-clickable because every diagnostic line begins with `path
 uvx uniqfunc
 ```
 
-Exclude name patterns (repeatable regex):
+Defaults ignore `main` and `cli`. Add more exclude patterns (repeatable regex):
 
 ```bash
 uvx uniqfunc --exclude-name '^main$' --exclude-name '^cli$'
@@ -46,7 +46,7 @@ JSON:
 
 ```json
 {
-  "version": "0.1.2",
+  "version": "0.1.3",
   "repo_root": "/abs/path",
   "naming_conflicts": [
     {

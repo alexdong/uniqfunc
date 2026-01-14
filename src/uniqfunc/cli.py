@@ -67,6 +67,23 @@ def _compile_name_pattern(raw: str) -> NamePattern:
     return NamePattern(raw=raw, regex=regex)
 
 
+DEFAULT_EXCLUDE_PATTERNS = (
+    _compile_name_pattern("^main$"),
+    _compile_name_pattern("^cli$"),
+)
+
+
+def _dedupe_patterns(patterns: Sequence[NamePattern]) -> list[NamePattern]:
+    seen: set[str] = set()
+    unique: list[NamePattern] = []
+    for pattern in patterns:
+        if pattern.raw in seen:
+            continue
+        unique.append(pattern)
+        seen.add(pattern.raw)
+    return unique
+
+
 def read_source(repo_root: Path, relative_path: Path) -> ReadResult:
     file_path = repo_root / relative_path
     if not file_path.is_file():
@@ -231,9 +248,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--exclude-name",
         action="append",
-        default=[],
+        default=list(DEFAULT_EXCLUDE_PATTERNS),
         type=_compile_name_pattern,
-        help="Regex pattern for function names to ignore (repeatable).",
+        help="Regex pattern for function names to ignore (repeatable; defaults to ^main$, ^cli$).",
     )
     return parser
 
@@ -279,16 +296,17 @@ def main(argv: Sequence[str] = ()) -> int:
     configure_logging(Path("run"))
     cwd = Path(args.path).resolve()
     logger.debug("Starting scan in %s", cwd)
+    exclude_patterns = _dedupe_patterns(args.exclude_name)
     scan_outcome = scan_repository(
         cwd,
         args.similarity_threshold,
-        args.exclude_name,
+        exclude_patterns,
     )
     if isinstance(scan_outcome, ScanError):
         result = ScanResult(
             repo_root=cwd,
             errors=[scan_outcome],
-            exclude_patterns=[pattern.raw for pattern in args.exclude_name],
+            exclude_patterns=[pattern.raw for pattern in exclude_patterns],
         )
         _emit_output(result, args.format)
         return 2 if is_fatal_error(scan_outcome) else 0

@@ -9,7 +9,8 @@ test:
 	uv run pytest
 
 release:
-	@VERSION="$$(uv version --short)"; \
+	@set -e; \
+	VERSION="$$(uv version --short)"; \
 	if [ -z "$$VERSION" ]; then \
 		echo "Unable to determine version via uv version --short."; \
 		exit 1; \

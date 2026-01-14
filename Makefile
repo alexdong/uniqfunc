@@ -1,6 +1,6 @@
-.PHONY: dev test release
+.PHONY: lint test release
 
-dev:
+lint:
 	uv run ruff check . --fix --unsafe-fixes
 	uv run ruff format .
 	uv run ty check . --exclude python_template
@@ -19,7 +19,7 @@ release:
 		echo "Working tree is dirty; commit or stash before releasing."; \
 		exit 1; \
 	fi; \
-	make dev; \
+	make lint; \
 	make test; \
 	if ! git diff --quiet || ! git diff --cached --quiet; then \
 		echo "Working tree changed during lint/test; commit fixes before releasing."; \

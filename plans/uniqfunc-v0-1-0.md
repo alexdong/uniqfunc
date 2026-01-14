@@ -90,7 +90,7 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 ## Action items
 
   [x] 1. Build core models and git-aware file selection with error handling and tests.
-  [ ] 2. Implement AST parsing in `parser.py` with doctests and unit tests.
+  [x] 2. Implement AST parsing in `parser.py` with doctests and unit tests.
   [ ] 3. Implement fingerprinting in `fingerprint.py` with doctests and unit tests.
   [ ] 4. Implement similarity scoring with per-strategy modules and a combined ranker, using doctests and unit tests.
   [ ] 5. Wire duplicate detection, output formatting, and CLI entry points with tests.
@@ -119,9 +119,9 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 
   Goal: Extract all function defs (including nested and methods) with annotations and docstrings while preserving error reporting.
 
-- [ ] 2.1 Implement `parser.py` to extract function defs (including nested/methods), parameters, return annotations, and docstrings, capturing UQF001 for syntax errors without aborting the scan.
-- [ ] 2.2 Add function-level doctests covering simple defs, nested defs, and annotation parsing.
-- [ ] 2.3 Write `tests/test_parser.py` to validate extraction order, syntax error handling, and deterministic output fields.
+- [x] 2.1 Implement `parser.py` to extract function defs (including nested/methods), parameters, return annotations, and docstrings, capturing UQF001 for syntax errors without aborting the scan.
+- [x] 2.2 Add function-level doctests covering simple defs, nested defs, and annotation parsing.
+- [x] 2.3 Write `tests/test_parser.py` to validate extraction order, syntax error handling, and deterministic output fields.
 
   Acceptance criteria:
   - CLI: `uv run --env-file .env -m uniqfunc.cli --format json`

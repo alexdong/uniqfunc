@@ -6,7 +6,6 @@ Usage:
 """
 
 import argparse
-import ast
 import json
 import logging
 import sys
@@ -30,11 +29,11 @@ from uniqfunc.model import (
     ScanError,
     ScanResult,
 )
+from uniqfunc.parser import ParseFailure, parse_function_defs
 
 logger = logging.getLogger(__name__)
 
 READ_ERROR_CODE = "UQF000"
-SYNTAX_ERROR_CODE = "UQF001"
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,32 +50,13 @@ class ReadFailure:
 ReadResult = ReadOutcome | ReadFailure
 
 
-@dataclass(frozen=True, slots=True)
-class ParseOutcome:
-    tree: ast.AST
-
-
-@dataclass(frozen=True, slots=True)
-class ParseFailure:
-    error: ScanError
-
-
-ParseResult = ParseOutcome | ParseFailure
-
-
-def _repo_relative_path(repo_root: Path, path: Path) -> Path:
-    assert repo_root in path.parents or path == repo_root, (
-        "Expected path to be within the repo root for consistent output."
-    )
-    return path.relative_to(repo_root)
-
-
-def read_source(repo_root: Path, file_path: Path) -> ReadResult:
+def read_source(repo_root: Path, relative_path: Path) -> ReadResult:
+    file_path = repo_root / relative_path
     if not file_path.is_file():
         return ReadFailure(
             error=ScanError(
                 code=READ_ERROR_CODE,
-                path=_repo_relative_path(repo_root, file_path),
+                path=relative_path,
                 line=1,
                 col=1,
                 message="file path does not exist or is not a file.",
@@ -88,46 +68,35 @@ def read_source(repo_root: Path, file_path: Path) -> ReadResult:
         return ReadFailure(
             error=ScanError(
                 code=READ_ERROR_CODE,
-                path=_repo_relative_path(repo_root, file_path),
+                path=relative_path,
                 line=1,
                 col=1,
                 message=str(exc),
             ),
         )
-    return ReadOutcome(path=file_path, source=source)
+    return ReadOutcome(path=relative_path, source=source)
 
 
-def parse_source(repo_root: Path, file_path: Path, source: str) -> ParseResult:
-    try:
-        tree = ast.parse(source, filename=file_path.as_posix())
-    except SyntaxError as exc:
-        line = exc.lineno or 1
-        col = exc.offset or 1
-        message = exc.msg or "syntax error"
-        return ParseFailure(
-            error=ScanError(
-                code=SYNTAX_ERROR_CODE,
-                path=_repo_relative_path(repo_root, file_path),
-                line=line,
-                col=col,
-                message=f"syntax error: {message}",
-            ),
-        )
-    return ParseOutcome(tree=tree)
+@dataclass(frozen=True, slots=True)
+class ScanSlice:
+    functions: list[FuncRef]
+    errors: list[ScanError]
 
 
-def _scan_files(repo_root: Path, files: Sequence[Path]) -> list[ScanError]:
+def _scan_files(repo_root: Path, files: Sequence[Path]) -> ScanSlice:
+    functions: list[FuncRef] = []
     errors: list[ScanError] = []
     for rel_path in files:
-        file_path = repo_root / rel_path
-        read_result = read_source(repo_root, file_path)
+        read_result = read_source(repo_root, rel_path)
         if isinstance(read_result, ReadFailure):
             errors.append(read_result.error)
             continue
-        parse_result = parse_source(repo_root, file_path, read_result.source)
+        parse_result = parse_function_defs(read_result.source, read_result.path)
         if isinstance(parse_result, ParseFailure):
             errors.append(parse_result.error)
-    return errors
+            continue
+        functions.extend(parse_result.functions)
+    return ScanSlice(functions=functions, errors=errors)
 
 
 def scan_repository(cwd: Path) -> ScanResult | ScanError:
@@ -137,8 +106,12 @@ def scan_repository(cwd: Path) -> ScanResult | ScanError:
     files_result = list_python_files(root_result.repo_root)
     if isinstance(files_result, FileListFailure):
         return files_result.error
-    errors = _scan_files(root_result.repo_root, files_result.files)
-    return ScanResult(repo_root=root_result.repo_root, errors=errors)
+    scan_slice = _scan_files(root_result.repo_root, files_result.files)
+    return ScanResult(
+        repo_root=root_result.repo_root,
+        functions=scan_slice.functions,
+        errors=scan_slice.errors,
+    )
 
 
 def _path_to_string(path: Path) -> str:

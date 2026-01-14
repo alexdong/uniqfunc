@@ -89,7 +89,7 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 
 ## Action items
 
-  [ ] 1. Build core models and git-aware file selection with error handling and tests.
+  [x] 1. Build core models and git-aware file selection with error handling and tests.
   [ ] 2. Implement AST parsing in `parser.py` with doctests and unit tests.
   [ ] 3. Implement fingerprinting in `fingerprint.py` with doctests and unit tests.
   [ ] 4. Implement similarity scoring with per-strategy modules and a combined ranker, using doctests and unit tests.
@@ -101,11 +101,11 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 
   Goal: Establish the data model and deterministic file discovery with robust error reporting.
 
-- [ ] 1.1 Create `src/uniqfunc` package skeleton and `model.py` dataclasses with doctests.
-- [ ] 1.2 Implement `logging_config.py` with run log creation and DEBUG defaults for `__main__` blocks.
-- [ ] 1.3 Implement `git_files.py` to run the required `git ls-files` command, capture UQF002/UQF003, and return a stable, sorted list of `Path` objects plus repo root.
-- [ ] 1.4 Add file reading helpers that return UQF000 for unreadable files and integrate them into a minimal scan loop.
-- [ ] 1.5 Write `tests/test_git_file_selection.py` and `tests/test_error_handling.py` to validate git selection and error codes.
+- [x] 1.1 Create `src/uniqfunc` package skeleton and `model.py` dataclasses with doctests.
+- [x] 1.2 Implement `logging_config.py` with run log creation and DEBUG defaults for `__main__` blocks.
+- [x] 1.3 Implement `git_files.py` to run the required `git ls-files` command, capture UQF002/UQF003, and return a stable, sorted list of `Path` objects plus repo root.
+- [x] 1.4 Add file reading helpers that return UQF000 for unreadable files and integrate them into a minimal scan loop.
+- [x] 1.5 Write `tests/test_git_file_selection.py` and `tests/test_error_handling.py` to validate git selection and error codes.
 
   Acceptance criteria:
   - CLI: `uv run --env-file .env -m uniqfunc.cli --format json`

@@ -3,8 +3,7 @@
 dev:
 	uv run ruff check . --fix --unsafe-fixes
 	uv run ruff format .
-	uv run ty check .
+	uv run ty check . --exclude python_template
 
 test:
 	uv run pytest --lf
-

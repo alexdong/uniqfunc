@@ -77,11 +77,8 @@ extend-ignore = [
 max-complexity = 5
 
 [tool.pytest.ini_options]
-testpaths = ["quinn", "tests"]
-python_files = ["*_test.py"]
-addopts = "-vv --tb=short"
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
+addopts = "-q"
+testpaths = ["tests"]
 
 [tool.coverage.run]
 source = ["src"]

@@ -46,13 +46,38 @@ def format_error_lines(errors: Sequence[ScanError]) -> list[str]:
     return [_format_error_line(error) for error in errors]
 
 
+def _format_summary_lines(scan_result: ScanResult) -> list[str]:
+    repo_root = _path_to_string(scan_result.repo_root.resolve())
+    duplicate_names = {conflict.name for conflict in scan_result.conflicts}
+    reuse_candidates = sum(
+        len(suggestion.candidates) for suggestion in scan_result.suggestions
+    )
+    stats = (
+        f"files={len(scan_result.files)} "
+        f"functions={len(scan_result.functions)} "
+        f"excluded_functions={len(scan_result.excluded_functions)} "
+        f"duplicate_names={len(duplicate_names)} "
+        f"duplicate_occurrences={len(scan_result.conflicts)} "
+        f"reuse_targets={len(scan_result.suggestions)} "
+        f"reuse_candidates={reuse_candidates} "
+        f"errors={len(scan_result.errors)}"
+    )
+    lines = [f"uniqfunc {__version__} repo_root={repo_root}", stats]
+    if scan_result.exclude_patterns:
+        patterns = ",".join(scan_result.exclude_patterns)
+        lines.append(f"exclude_name_patterns={patterns}")
+    return lines
+
+
 def _format_conflict_line(conflict: NamingConflict) -> str:
     occurrence = conflict.occurrence
     first = conflict.first_seen
     first_location = _format_location(first.path, first.line, first.col)
     return (
         f"{_format_location(occurrence.path, occurrence.line, occurrence.col)} "
-        f"UQF100 duplicate function name '{conflict.name}' (also in {first_location})"
+        f"UQF100 duplicate function name '{conflict.name}' (also in {first_location}) "
+        f"signature={occurrence.signature} "
+        f"also_signature={first.signature}"
     )
 
 
@@ -60,7 +85,7 @@ def _format_score(value: float) -> str:
     return f"{value:.2f}"
 
 
-def _format_candidate_line(candidate: ReuseCandidate, target_name: str) -> str:
+def _format_candidate_line(candidate: ReuseCandidate, target: FuncRef) -> str:
     name_token = candidate.signals.get("name_token_jaccard", 0.0)
     signature_score = candidate.signals.get("signature_score", 0.0)
     ast_score = candidate.signals.get("ast_score", 0.0)
@@ -69,11 +94,13 @@ def _format_candidate_line(candidate: ReuseCandidate, target_name: str) -> str:
         f"signature:{_format_score(signature_score)} "
         f"ast:{_format_score(ast_score)}"
     )
+    target_location = _format_location(target.path, target.line, target.col)
     return (
         f"{_format_location(candidate.path, candidate.line, candidate.col)} "
-        f"UQF201 candidate_for={target_name} "
+        f"UQF201 candidate_for={target.name} target_loc={target_location} "
         f"name={candidate.name} score={_format_score(candidate.score)} "
-        f"signals={signals}"
+        f"signals={signals} "
+        f"signature={candidate.signature}"
     )
 
 
@@ -86,10 +113,11 @@ def _format_suggestion_lines(suggestions: Sequence[ReuseSuggestion]) -> list[str
         lines.append(
             f"{_format_location(target.path, target.line, target.col)} "
             f"UQF200 reuse_candidate target={target.name} "
-            f"candidates={len(suggestion.candidates)}"
+            f"candidates={len(suggestion.candidates)} "
+            f"signature={target.signature}"
         )
         lines.extend(
-            _format_candidate_line(candidate, target.name)
+            _format_candidate_line(candidate, target)
             for candidate in suggestion.candidates
         )
     lines.append("=== END UNIQFUNC LLM REUSE SUGGESTIONS ===")
@@ -97,11 +125,12 @@ def _format_suggestion_lines(suggestions: Sequence[ReuseSuggestion]) -> list[str
 
 
 def format_text(scan_result: ScanResult) -> TextOutput:
+    summary_lines = _format_summary_lines(scan_result)
     conflict_lines = [
         _format_conflict_line(conflict) for conflict in scan_result.conflicts
     ]
     suggestion_lines = _format_suggestion_lines(scan_result.suggestions)
-    stdout_lines = [*conflict_lines, *suggestion_lines]
+    stdout_lines = [*summary_lines, *conflict_lines, *suggestion_lines]
     stderr_lines = format_error_lines(scan_result.errors)
     stdout = "\n".join(stdout_lines)
     stderr = "\n".join(stderr_lines)

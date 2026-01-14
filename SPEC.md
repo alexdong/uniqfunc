@@ -196,6 +196,7 @@ uniqfunc [PATH]
 
 - `--format {text,json}` (default: `text`)
 - `--similarity-threshold FLOAT` (default: `0.70`)
+- `--exclude-name REGEX` (repeatable; exclude matching function names)
 - `--version`
 - `-h/--help`
 
@@ -215,11 +216,26 @@ uniqfunc [PATH]
 
 This ensures VS Code terminal can click-through.
 
+#### Summary header
+
+Text output begins with a short, human-friendly summary:
+
+```
+uniqfunc <version> repo_root=/abs/path
+files=<N> functions=<N> excluded_functions=<N> duplicate_names=<N> duplicate_occurrences=<N> reuse_targets=<N> reuse_candidates=<N> errors=<N>
+```
+
+If name exclusions are in use, an extra line is printed:
+
+```
+exclude_name_patterns=<comma-separated regex patterns>
+```
+
 #### Naming conflicts
 
 One line per naming conflict:
 
-`path/to/file.py:line:col UQF100 duplicate function name 'foo' (also in other.py:line:col)`
+`path/to/file.py:line:col UQF100 duplicate function name 'foo' (also in other.py:line:col) signature=def foo(...) also_signature=def foo(...)`
 
 #### Reuse suggestions (LLM review)
 
@@ -235,11 +251,11 @@ Within the block, each line MUST also be VS Code-clickable:
 
 - Target summary line:
 
-`path/to/target.py:line:col UQF200 reuse_candidate target=<funcname> candidates=<N>`
+`path/to/target.py:line:col UQF200 reuse_candidate target=<funcname> candidates=<N> signature=def <funcname>(...)`
 
 - Candidate lines (max 5 per target):
 
-`path/to/candidate.py:line:col UQF201 candidate_for=<funcname> name=<candname> score=0.83 signals=name_token_jaccard:0.66 signature:0.75 ast:0.90`
+`path/to/candidate.py:line:col UQF201 candidate_for=<funcname> target_loc=path/to/target.py:line:col name=<candname> score=0.83 signals=name_token_jaccard:0.66 signature:0.75 ast:0.90 signature=def <candname>(...)`
 
 ### `--format json`
 

@@ -52,6 +52,82 @@ def _format_returns(returns: ast.expr | None) -> str | None:
     return ast.unparse(returns)
 
 
+def _format_arg(arg: ast.arg) -> str:
+    if arg.annotation is None:
+        return arg.arg
+    return f"{arg.arg}: {ast.unparse(arg.annotation)}"
+
+
+def _format_defaults(
+    args: list[ast.arg],
+    defaults: Sequence[ast.expr],
+) -> list[str]:
+    defaults_start = len(args) - len(defaults)
+    rendered: list[str] = []
+    for index, arg in enumerate(args):
+        value = _format_arg(arg)
+        if index >= defaults_start:
+            default_expr = defaults[index - defaults_start]
+            value = f"{value}={ast.unparse(default_expr)}"
+        rendered.append(value)
+    return rendered
+
+
+def _format_positional_parts(args: ast.arguments) -> list[str]:
+    parts = _format_defaults([*args.posonlyargs, *args.args], args.defaults)
+    if args.posonlyargs:
+        parts.insert(len(args.posonlyargs), "/")
+    return parts
+
+
+def _format_kwonly_parts(args: ast.arguments) -> list[str]:
+    parts: list[str] = []
+    parts.extend(_format_vararg_marker(args))
+    parts.extend(_format_kwonly_defaults(args.kwonlyargs, args.kw_defaults))
+    parts.extend(_format_kwarg(args))
+    return parts
+
+
+def _format_vararg_marker(args: ast.arguments) -> list[str]:
+    if args.vararg:
+        return [f"*{_format_arg(args.vararg)}"]
+    if args.kwonlyargs:
+        return ["*"]
+    return []
+
+
+def _format_kwonly_defaults(
+    kwonlyargs: Sequence[ast.arg],
+    defaults: Sequence[ast.expr | None],
+) -> list[str]:
+    parts: list[str] = []
+    for kwarg, default in zip(kwonlyargs, defaults, strict=False):
+        rendered = _format_arg(kwarg)
+        if default is not None:
+            rendered = f"{rendered}={ast.unparse(default)}"
+        parts.append(rendered)
+    return parts
+
+
+def _format_kwarg(args: ast.arguments) -> list[str]:
+    if args.kwarg:
+        return [f"**{_format_arg(args.kwarg)}"]
+    return []
+
+
+def _format_signature(node: ast.FunctionDef | ast.AsyncFunctionDef) -> str:
+    args = node.args
+    parts = _format_positional_parts(args)
+    parts.extend(_format_kwonly_parts(args))
+    params = ", ".join(parts)
+    prefix = "async " if isinstance(node, ast.AsyncFunctionDef) else ""
+    signature = f"{prefix}def {node.name}({params})"
+    returns = _format_returns(node.returns)
+    if returns:
+        signature = f"{signature} -> {returns}"
+    return f"{signature}:"
+
+
 def _build_func_ref(
     node: ast.FunctionDef | ast.AsyncFunctionDef,
     path: Path,
@@ -66,6 +142,7 @@ def _build_func_ref(
         line=line,
         col=col,
         name=node.name,
+        signature=_format_signature(node),
         params=params,
         returns=returns,
         doc=doc,

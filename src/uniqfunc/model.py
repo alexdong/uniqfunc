@@ -18,7 +18,7 @@ class FuncRef:
     """Reference to a function definition in a source file.
 
     Examples:
-        >>> FuncRef(Path("example.py"), 1, 1, "demo", [], None, None, []).name
+        >>> FuncRef(Path("example.py"), 1, 1, "demo", "def demo():", [], None, None, []).name
         'demo'
     """
 
@@ -26,6 +26,7 @@ class FuncRef:
     line: int
     col: int
     name: str
+    signature: str
     params: list[str] = field(default_factory=list)
     returns: str | None = None
     doc: str | None = None
@@ -35,6 +36,7 @@ class FuncRef:
         assert self.line >= 1, "FuncRef.line must be a 1-based line number."
         assert self.col >= 1, "FuncRef.col must be a 1-based column number."
         assert self.name, "FuncRef.name must be a non-empty function name."
+        assert self.signature, "FuncRef.signature must be a non-empty signature."
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,6 +76,7 @@ class ReuseCandidate:
     line: int
     col: int
     name: str
+    signature: str
     score: float
     signals: dict[str, float] = field(default_factory=dict)
 
@@ -81,6 +84,7 @@ class ReuseCandidate:
         assert self.line >= 1, "ReuseCandidate.line must be a 1-based line number."
         assert self.col >= 1, "ReuseCandidate.col must be a 1-based column number."
         assert self.name, "ReuseCandidate.name must be a non-empty function name."
+        assert self.signature, "ReuseCandidate.signature must be a non-empty signature."
         assert 0.0 <= self.score <= 1.0, "ReuseCandidate.score must be between 0 and 1."
 
 
@@ -97,7 +101,10 @@ class ScanResult:
     """Result of scanning a repository for function conflicts and reuse."""
 
     repo_root: Path
+    files: list[Path] = field(default_factory=list)
     functions: list[FuncRef] = field(default_factory=list)
+    excluded_functions: list[FuncRef] = field(default_factory=list)
+    exclude_patterns: list[str] = field(default_factory=list)
     errors: list[ScanError] = field(default_factory=list)
     conflicts: list[NamingConflict] = field(default_factory=list)
     suggestions: list[ReuseSuggestion] = field(default_factory=list)
@@ -115,7 +122,17 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def _sample_result() -> ScanResult:
-    sample_ref = FuncRef(Path("example.py"), 1, 1, "demo", [], None, None, [])
+    sample_ref = FuncRef(
+        Path("example.py"),
+        1,
+        1,
+        "demo",
+        "def demo():",
+        [],
+        None,
+        None,
+        [],
+    )
     return ScanResult(repo_root=Path.cwd(), functions=[sample_ref])
 
 

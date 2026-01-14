@@ -46,6 +46,7 @@ def _score_candidate(target: FuncRef, candidate: FuncRef) -> ReuseCandidate:
         line=candidate.line,
         col=candidate.col,
         name=candidate.name,
+        signature=candidate.signature,
         score=final_score,
         signals=signals,
     )
@@ -84,8 +85,8 @@ def reuse_suggestions(
     """Compute reuse suggestions across a set of functions.
 
     Examples:
-        >>> left = FuncRef(Path("a.py"), 1, 1, "alpha", ["x"], "int", None, ["RETURN", "VAR"])
-        >>> right = FuncRef(Path("b.py"), 1, 1, "alpha_copy", ["x"], "int", None, ["RETURN", "VAR"])
+        >>> left = FuncRef(Path("a.py"), 1, 1, "alpha", "def alpha(x) -> int:", ["x"], "int", None, ["RETURN", "VAR"])
+        >>> right = FuncRef(Path("b.py"), 1, 1, "alpha_copy", "def alpha_copy(x) -> int:", ["x"], "int", None, ["RETURN", "VAR"])
         >>> suggestions = reuse_suggestions([left, right], 0.1, top_k=1)
         >>> suggestions[0].target.name
         'alpha'

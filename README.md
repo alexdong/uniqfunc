@@ -19,20 +19,26 @@ Text output is VS Code-clickable because every diagnostic line begins with `path
 uvx uniqfunc
 ```
 
+Exclude name patterns (repeatable regex):
+
+```bash
+uvx uniqfunc --exclude-name '^main$' --exclude-name '^cli$'
+```
+
 ## Output examples
 
 Text (duplicate):
 
 ```text
-path/to/file.py:10:1 UQF100 duplicate function name 'foo' (also in other.py:42:1)
+path/to/file.py:10:1 UQF100 duplicate function name 'foo' (also in other.py:42:1) signature=def foo(): also_signature=def foo():
 ```
 
 Text (reuse suggestions):
 
 ```text
 === UNIQFUNC LLM REUSE SUGGESTIONS ===
-src/timeutils.py:12:1 UQF200 reuse_candidate target=epoch_to_aware_datetime candidates=1
-src/timeutils.py:5:1 UQF201 candidate_for=epoch_to_aware_datetime name=epoch_to_datetime score=0.83 signals=name_token_jaccard:0.66 signature:0.75 ast:0.90
+src/timeutils.py:12:1 UQF200 reuse_candidate target=epoch_to_aware_datetime candidates=1 signature=def epoch_to_aware_datetime(epoch_seconds) -> datetime:
+src/timeutils.py:5:1 UQF201 candidate_for=epoch_to_aware_datetime target_loc=src/timeutils.py:12:1 name=epoch_to_datetime score=0.83 signals=name_token_jaccard:0.66 signature:0.75 ast:0.90 signature=def epoch_to_datetime(epoch) -> datetime:
 === END UNIQFUNC LLM REUSE SUGGESTIONS ===
 ```
 
@@ -40,7 +46,7 @@ JSON:
 
 ```json
 {
-  "version": "0.1.0",
+  "version": "0.1.2",
   "repo_root": "/abs/path",
   "naming_conflicts": [
     {

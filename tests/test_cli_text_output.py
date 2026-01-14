@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from uniqfunc import __version__
 from uniqfunc.cli import main
 
 EXIT_CONFLICT = 1
@@ -35,6 +36,39 @@ def _is_clickable(line: str) -> bool:
     return re.match(r"^[^:]+:\d+:\d+ ", line) is not None
 
 
+def _parse_summary_stats(line: str) -> dict[str, str]:
+    stats: dict[str, str] = {}
+    for part in line.split():
+        key, value = part.split("=", 1)
+        stats[key] = value
+    return stats
+
+
+def test_text_output_includes_summary_header(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    repo_path = tmp_path / "repo"
+    _init_repo(repo_path)
+    (repo_path / "a.py").write_text("def solo():\n    return 1\n", encoding="utf-8")
+    _run_git(repo_path, ["add", "a.py"])
+    _run_git(repo_path, ["commit", "-m", "Add solo function"])
+
+    exit_code = main(["--format", "text", str(repo_path)])
+    assert exit_code == EXIT_OK
+    stdout = capsys.readouterr().out
+    lines = stdout.splitlines()
+    assert lines[0] == f"uniqfunc {__version__} repo_root={repo_path.as_posix()}"
+    stats = _parse_summary_stats(lines[1])
+    assert stats["files"] == "1"
+    assert stats["functions"] == "1"
+    assert stats["excluded_functions"] == "0"
+    assert stats["duplicate_names"] == "0"
+    assert stats["duplicate_occurrences"] == "0"
+    assert stats["reuse_targets"] == "0"
+    assert stats["reuse_candidates"] == "0"
+    assert stats["errors"] == "0"
+
+
 def test_text_output_reports_conflicts(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -50,7 +84,8 @@ def test_text_output_reports_conflicts(
     stdout = capsys.readouterr().out
     conflict_lines = [line for line in stdout.splitlines() if "UQF100" in line]
     assert conflict_lines == [
-        "b.py:1:1 UQF100 duplicate function name 'dup' (also in a.py:1:1)",
+        "b.py:1:1 UQF100 duplicate function name 'dup' (also in a.py:1:1) "
+        "signature=def dup(): also_signature=def dup():",
     ]
     assert _is_clickable(conflict_lines[0])
 
@@ -93,3 +128,29 @@ def test_text_output_reports_suggestions(
     assert lines
     for line in lines:
         assert _is_clickable(line)
+    assert any("UQF200" in line and "signature=" in line for line in lines)
+    for line in lines:
+        if "UQF201" in line:
+            assert "signature=" in line
+            assert "target_loc=" in line
+
+
+def test_text_output_excludes_name_patterns(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    repo_path = tmp_path / "repo"
+    _init_repo(repo_path)
+    (repo_path / "a.py").write_text("def main():\n    return 1\n", encoding="utf-8")
+    (repo_path / "b.py").write_text("def main():\n    return 2\n", encoding="utf-8")
+    _run_git(repo_path, ["add", "a.py", "b.py"])
+    _run_git(repo_path, ["commit", "-m", "Add duplicate mains"])
+
+    exit_code = main(["--format", "text", "--exclude-name", "^main$", str(repo_path)])
+    assert exit_code == EXIT_OK
+    stdout = capsys.readouterr().out
+    assert "UQF100" not in stdout
+    lines = stdout.splitlines()
+    stats = _parse_summary_stats(lines[1])
+    assert stats["functions"] == "0"
+    assert stats["excluded_functions"] == "2"
+    assert lines[2] == "exclude_name_patterns=^main$"

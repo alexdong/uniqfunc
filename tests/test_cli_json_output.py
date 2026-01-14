@@ -63,7 +63,7 @@ def test_json_output_schema(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     assert exit_code == EXIT_CONFLICT
     output = capsys.readouterr().out
     payload = json.loads(output)
-    assert payload["version"] == "0.1.0"
+    assert payload["version"] == "0.1.2"
     assert payload["repo_root"] == repo_path.as_posix()
     assert set(payload.keys()) == {
         "version",

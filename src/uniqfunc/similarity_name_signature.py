@@ -91,8 +91,8 @@ def name_signature_score(left: FuncRef, right: FuncRef) -> NameSignatureScore:
     """Compute the combined name + signature similarity.
 
     Examples:
-        >>> left = FuncRef(Path("a.py"), 1, 1, "epoch_to_datetime", ["epoch"], "datetime", None, [])
-        >>> right = FuncRef(Path("b.py"), 1, 1, "epoch_to_aware_datetime", ["epoch_seconds"], "datetime", None, [])
+        >>> left = FuncRef(Path("a.py"), 1, 1, "epoch_to_datetime", "def epoch_to_datetime(epoch) -> datetime:", ["epoch"], "datetime", None, [])
+        >>> right = FuncRef(Path("b.py"), 1, 1, "epoch_to_aware_datetime", "def epoch_to_aware_datetime(epoch_seconds) -> datetime:", ["epoch_seconds"], "datetime", None, [])
         >>> score = name_signature_score(left, right)
         >>> round(score.name_token_jaccard, 2)
         0.75
@@ -126,8 +126,28 @@ def main(argv: Sequence[str]) -> int:
     """
     parser = build_arg_parser()
     args = parser.parse_args(argv)
-    left = FuncRef(Path("left.py"), 1, 1, args.left, [], None, None, [])
-    right = FuncRef(Path("right.py"), 1, 1, args.right, [], None, None, [])
+    left = FuncRef(
+        Path("left.py"),
+        1,
+        1,
+        args.left,
+        f"def {args.left}():",
+        [],
+        None,
+        None,
+        [],
+    )
+    right = FuncRef(
+        Path("right.py"),
+        1,
+        1,
+        args.right,
+        f"def {args.right}():",
+        [],
+        None,
+        None,
+        [],
+    )
     pprint.pprint(name_signature_score(left, right))
     return 0
 

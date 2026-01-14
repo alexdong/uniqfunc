@@ -6,4 +6,4 @@ dev:
 	uv run ty check . --exclude python_template
 
 test:
-	uv run pytest --lf
+	uv run pytest

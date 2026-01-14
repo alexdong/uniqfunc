@@ -94,7 +94,7 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
   [x] 3. Implement fingerprinting in `fingerprint.py` with doctests and unit tests.
   [x] 4. Implement similarity scoring with per-strategy modules and a combined ranker, using doctests and unit tests.
   [x] 5. Wire duplicate detection, output formatting, and CLI entry points with tests.
-  [ ] 6. Update packaging metadata, README, Makefile, and regenerate CONTEXT.md.
+  [x] 6. Update packaging metadata, README, Makefile, and regenerate CONTEXT.md.
   [ ] 7. Build and upload the package to PyPI for `uvx uniqfunc` usage.
 
 ## Task 1: Core models and git-aware file selection
@@ -193,10 +193,10 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 
   Goal: Align project metadata, README, and tooling with the SPEC.
 
-- [ ] 6.1 Update `pyproject.toml` to Hatchling metadata, version, scripts, dependencies, and pytest config per SPEC.
-- [ ] 6.2 Update `Makefile` targets for lint/test using the new package layout.
-- [ ] 6.3 Create `README.md` with required sections, examples, and output snippets.
-- [ ] 6.4 Regenerate `CONTEXT.md` after public API/module layout is finalized.
+- [x] 6.1 Update `pyproject.toml` to Hatchling metadata, version, scripts, dependencies, and pytest config per SPEC.
+- [x] 6.2 Update `Makefile` targets for lint/test using the new package layout.
+- [x] 6.3 Create `README.md` with required sections, examples, and output snippets.
+- [x] 6.4 Regenerate `CONTEXT.md` after public API/module layout is finalized.
 
   Acceptance criteria:
   - CLI: `uv run --env-file .env -m uniqfunc.cli --version`

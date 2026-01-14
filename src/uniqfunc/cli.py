@@ -30,6 +30,7 @@ from uniqfunc.model import (
     ScanResult,
 )
 from uniqfunc.parser import ParseFailure, parse_function_defs
+from uniqfunc.similarity import reuse_suggestions
 
 logger = logging.getLogger(__name__)
 
@@ -99,7 +100,7 @@ def _scan_files(repo_root: Path, files: Sequence[Path]) -> ScanSlice:
     return ScanSlice(functions=functions, errors=errors)
 
 
-def scan_repository(cwd: Path) -> ScanResult | ScanError:
+def scan_repository(cwd: Path, similarity_threshold: float) -> ScanResult | ScanError:
     root_result = resolve_repo_root(cwd)
     if isinstance(root_result, RepoRootFailure):
         return root_result.error
@@ -107,10 +108,12 @@ def scan_repository(cwd: Path) -> ScanResult | ScanError:
     if isinstance(files_result, FileListFailure):
         return files_result.error
     scan_slice = _scan_files(root_result.repo_root, files_result.files)
+    suggestions = reuse_suggestions(scan_slice.functions, similarity_threshold)
     return ScanResult(
         repo_root=root_result.repo_root,
         functions=scan_slice.functions,
         errors=scan_slice.errors,
+        suggestions=suggestions,
     )
 
 
@@ -227,7 +230,7 @@ def main(argv: Sequence[str]) -> int:
     configure_logging(Path("run"))
     cwd = Path(args.path).resolve()
     logger.debug("Starting scan in %s", cwd)
-    scan_outcome = scan_repository(cwd)
+    scan_outcome = scan_repository(cwd, args.similarity_threshold)
     if isinstance(scan_outcome, ScanError):
         result = ScanResult(repo_root=cwd, errors=[scan_outcome])
         output = format_json(result)

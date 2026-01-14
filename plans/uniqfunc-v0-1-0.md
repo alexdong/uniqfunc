@@ -92,7 +92,7 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
   [x] 1. Build core models and git-aware file selection with error handling and tests.
   [x] 2. Implement AST parsing in `parser.py` with doctests and unit tests.
   [x] 3. Implement fingerprinting in `fingerprint.py` with doctests and unit tests.
-  [ ] 4. Implement similarity scoring with per-strategy modules and a combined ranker, using doctests and unit tests.
+  [x] 4. Implement similarity scoring with per-strategy modules and a combined ranker, using doctests and unit tests.
   [ ] 5. Wire duplicate detection, output formatting, and CLI entry points with tests.
   [ ] 6. Update packaging metadata, README, Makefile, and regenerate CONTEXT.md.
   [ ] 7. Build and upload the package to PyPI for `uvx uniqfunc` usage.
@@ -151,11 +151,11 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 
   Goal: Rank reuse candidates with deterministic scores by implementing name/signature and AST fingerprint strategies in separate modules, then combining them.
 
-- [ ] 4.1 Implement `similarity_name_signature.py` for snake_case token overlap, edit similarity, param-count similarity, param-name overlap, and return annotation matching.
-- [ ] 4.2 Implement `similarity_ast.py` to compute AST similarity from fingerprint shingles (Jaccard or token multiset overlap).
-- [ ] 4.3 Implement `similarity.py` to combine per-strategy scores with weights and rank top-k candidates deterministically, honoring a caller-provided threshold.
-- [ ] 4.4 Add function-level doctests for per-strategy helpers and the combined scorer.
-- [ ] 4.5 Write `tests/test_similarity.py` to validate thresholds, top-k behavior, and negative cases across both strategies.
+- [x] 4.1 Implement `similarity_name_signature.py` for snake_case token overlap, edit similarity, param-count similarity, param-name overlap, and return annotation matching.
+- [x] 4.2 Implement `similarity_ast.py` to compute AST similarity from fingerprint shingles (Jaccard or token multiset overlap).
+- [x] 4.3 Implement `similarity.py` to combine per-strategy scores with weights and rank top-k candidates deterministically, honoring a caller-provided threshold.
+- [x] 4.4 Add function-level doctests for per-strategy helpers and the combined scorer.
+- [x] 4.5 Write `tests/test_similarity.py` to validate thresholds, top-k behavior, and negative cases across both strategies.
 
   Acceptance criteria:
   - CLI: `uv run --env-file .env -m uniqfunc.similarity_name_signature -h`

@@ -91,7 +91,7 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 
   [x] 1. Build core models and git-aware file selection with error handling and tests.
   [x] 2. Implement AST parsing in `parser.py` with doctests and unit tests.
-  [ ] 3. Implement fingerprinting in `fingerprint.py` with doctests and unit tests.
+  [x] 3. Implement fingerprinting in `fingerprint.py` with doctests and unit tests.
   [ ] 4. Implement similarity scoring with per-strategy modules and a combined ranker, using doctests and unit tests.
   [ ] 5. Wire duplicate detection, output formatting, and CLI entry points with tests.
   [ ] 6. Update packaging metadata, README, Makefile, and regenerate CONTEXT.md.
@@ -135,9 +135,9 @@ The plan prioritizes deterministic output, strict error codes, and VS Code-click
 
   Goal: Produce a deterministic canonical token stream and shingled representation for AST similarity scoring.
 
-- [ ] 3.1 Implement `fingerprint.py` canonical token stream normalization and shingling (5-grams) with deterministic ordering.
-- [ ] 3.2 Add function-level doctests that demonstrate identifier normalization and constant bucketing.
-- [ ] 3.3 Write `tests/test_fingerprint.py` to validate token normalization, shingle generation, and stability across runs.
+- [x] 3.1 Implement `fingerprint.py` canonical token stream normalization and shingling (5-grams) with deterministic ordering.
+- [x] 3.2 Add function-level doctests that demonstrate identifier normalization and constant bucketing.
+- [x] 3.3 Write `tests/test_fingerprint.py` to validate token normalization, shingle generation, and stability across runs.
 
   Acceptance criteria:
   - CLI: `uv run --env-file .env -m uniqfunc.fingerprint -h`

@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
+from uniqfunc.fingerprint import fingerprint_function
 from uniqfunc.model import FuncRef, ScanError
 
 logger = logging.getLogger(__name__)
@@ -68,7 +69,7 @@ def _build_func_ref(
         params=params,
         returns=returns,
         doc=doc,
-        ast_fingerprint=[],
+        ast_fingerprint=fingerprint_function(node),
     )
 
 
